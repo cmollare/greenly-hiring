@@ -18,6 +18,18 @@ export class CarbonFootprintEstimationService {
         estimateCarbonFootprintDto: EstimateCarbonFootprintDto
     ): Promise<CarbonFootprintEstimation | null> {
 
+        const carbonEmissionEstimations = await this.retrieveProductCarbonEmission(estimateCarbonFootprintDto)
+
+        if (carbonEmissionEstimations.includes(-1)) {
+            return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: null });
+        }
+
+        const carbonEmissionEstimation = carbonEmissionEstimations.reduce((a, b) => a + b, 0);
+
+        return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: carbonEmissionEstimation });
+    }
+
+    private retrieveProductCarbonEmission(estimateCarbonFootprintDto: EstimateCarbonFootprintDto) {
         const carbonEmissionEstimations = estimateCarbonFootprintDto.products.map(
             async (product) => {
                 const carbonEmissionFactor = await this.carbonEmissionFactorRepository.findOne({
@@ -26,16 +38,9 @@ export class CarbonFootprintEstimationService {
                 if (!carbonEmissionFactor) return -1;
                 return carbonEmissionFactor.emissionCO2eInKgPerUnit * product.quantity;
             }
-        )
+        );
 
-        const carbonEmissionEstimationsAwaited = await Promise.all(carbonEmissionEstimations)
-        if (carbonEmissionEstimationsAwaited.includes(-1)) {
-            return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: null });
-        }
-
-        const carbonEmissionEstimation = carbonEmissionEstimationsAwaited.reduce((a, b) => a + b, 0);
-
-        return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: carbonEmissionEstimation });
+        return Promise.all(carbonEmissionEstimations);
     }
 
     findAll(): Promise<CarbonFootprintEstimation[]> {
