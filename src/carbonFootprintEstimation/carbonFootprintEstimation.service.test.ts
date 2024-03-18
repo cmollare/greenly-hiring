@@ -12,8 +12,6 @@ let productsToEstimate = {
     products: [
         { name: "flour", quantity: 2, unit: "kg" },
         { name: "ham", quantity: 1, unit: "kg" },
-        { name: "unknownProduct", quantity: 100, unit: "kg" },
-        { name: "unknownUnit", quantity: 100, unit: "g" }
     ]
 };
 
@@ -50,6 +48,21 @@ describe("CarbonFootprintEstimation.service", () => {
         expect(carbonFootPrintEstimations).toHaveLength(1);
         expect(carbonFootPrintEstimations[0].emissionCO2).toBe(0.39);
         expect(carbonFootPrintEstimations[0].source).toBe("Agrybalise");
+    });
+
+    it("should set a null emissionC02 if a product is not found", async () => {
+        const productsToEstimate = {
+            source: "Agrybalise",
+            products: [
+                { name: "flour", quantity: 2, unit: "kg" },
+                { name: "unknownProduct", quantity: 100, unit: "kg" },
+                { name: "unknownUnit", quantity: 100, unit: "g" }
+            ]
+        };
+        await carbonFootPrintEstimationService.computeCarbonFootprint(productsToEstimate);
+        const carbonFootPrintEstimations = await carbonFootPrintEstimationService.findAll();
+        expect(carbonFootPrintEstimations).toHaveLength(2);
+        expect(carbonFootPrintEstimations[1].emissionCO2).toBeNull();
     });
 });
 

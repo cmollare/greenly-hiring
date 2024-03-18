@@ -23,12 +23,17 @@ export class CarbonFootprintEstimationService {
                 const carbonEmissionFactor = await this.carbonEmissionFactorRepository.findOne({
                     where: { name: product.name, source: estimateCarbonFootprintDto.source, unit: product.unit }
                 });
-                if (!carbonEmissionFactor) return 0;
+                if (!carbonEmissionFactor) return -1;
                 return carbonEmissionFactor.emissionCO2eInKgPerUnit * product.quantity;
             }
         )
 
-        const carbonEmissionEstimation = (await Promise.all(carbonEmissionEstimations)).reduce((a, b) => a + b, 0);
+        const carbonEmissionEstimationsAwaited = await Promise.all(carbonEmissionEstimations)
+        if (carbonEmissionEstimationsAwaited.includes(-1)) {
+            return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: null });
+        }
+
+        const carbonEmissionEstimation = carbonEmissionEstimationsAwaited.reduce((a, b) => a + b, 0);
 
         return await this.carbonFootprintEstimationRepository.save({ source: estimateCarbonFootprintDto.source, emissionCO2: carbonEmissionEstimation });
     }

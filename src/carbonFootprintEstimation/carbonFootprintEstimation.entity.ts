@@ -33,18 +33,18 @@ export class CarbonFootprintEstimation extends BaseEntity {
 
     @Column({
         type: "float",
-        nullable: false,
+        nullable: true,
     })
     @ApiProperty(
         {
             name: "emissionCO2",
             type: "number",
             description: "The amount of carbon dioxide emitted in kg",
-            required: true,
+            required: false,
             example: 0.12
         }
     )
-    emissionCO2: number;
+    emissionCO2: number | null;
 
     @Column({
         nullable: false,
@@ -67,7 +67,7 @@ export class CarbonFootprintEstimation extends BaseEntity {
     }
 
     constructor(props: {
-        emissionCO2: number;
+        emissionCO2: number | null;
         source: string;
     }) {
         super();
